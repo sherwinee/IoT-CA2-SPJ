@@ -1,0 +1,7 @@
+Navigate to http://ec2-3-236-72-180.compute-1.amazonaws.com/
+(Credentials expire every 3 hours so pleasse request before viewing)
+
+Alternatively, Run the 3 batch files in this directory locally and access the webpage on localhost. However, the credentials will be needed
+
+You may have to wait for data to start coming in. If data does not come in after a while, you may use Shift-F5 to refresh (not from cache)
+Click on each trip ID when it appears to see individual Data

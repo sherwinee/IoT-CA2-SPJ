@@ -1,0 +1,167 @@
+    :root{body{margin:0;font-family:Nunito,-apple-system,BlinkMacSystemFont,Roboto,Arial,sans-serif;font-size:1rem;font-weight:400;line-height:1.5;color:#858796;text-align:left;background-color:#fff}}
+
+    /* Remove the navbar's default margin-bottom and rounded borders */ 
+    .navbar {
+      margin-bottom: 0;
+      border-radius: 0;
+      /*min-height: 80px;*/
+    }
+    .navbar {
+      position: fixed;
+      z-index: 10;
+      width: 100%;
+    }
+    .top-part {
+      height: 80px;
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      padding: 7px 15px;
+      background-color: rgba(255,255,255,0.9);
+    }
+
+    #grab-logo-top {
+      float: left;
+      height: 100%;
+    }
+
+    .top-title {
+      font-size: 30px;
+      font-weight: bold;
+      text-align: right;
+      margin: auto 15px auto auto;
+      color: #888888;
+    }
+
+    .trip-selection {
+      padding: 0px 20px;
+      padding-top: 20px;
+      background-color: #13af46;
+      box-sizing: border-box;
+    }
+
+    #select-buttons button {
+      margin: 0px 15px 20px 15px;
+      border: 0;
+      border-radius: 5px;
+      padding: 7px 10px;
+      background-color: #eeeeee;
+      color: #13af46;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    #current-booking-id {
+      width: 100%;
+      padding: 20px;
+      color: #13af46;
+      font-size: 30px;
+      font-family: sans-serif;
+      margin-top: 170px;
+    }
+
+    #no-data {
+      width: 100%;
+      text-align: center;
+      font-size: 20px;
+      margin: 0px auto;
+      color: #ffffff;
+    }
+
+    #danger-indicator {
+      font-size: 25px;
+    }
+    #danger {
+      font-size: 40px;
+    }
+    
+    /* Set height of the grid so .sidenav can be 100% (adjust as needed) */
+    .row.content {height: 450px}
+    
+    /* Set gray background color and 100% height */
+    .sidenav {
+      padding-top: 20px;
+      background-color: #f1f1f1;
+      height: 100%;
+    }
+    
+    /* Set black background color, white text and some padding */
+    footer {
+      background-color: #555;
+      color: white;
+      padding: 15px;
+    }
+    
+    /* On small screens, set height to 'auto' for sidenav and grid */
+    @media screen and (max-width: 767px) {
+      .sidenav {
+        height: auto;
+        padding: 15px;
+      }
+      .row.content {height:auto;} 
+    }
+
+
+    .card {
+        margin-top:20px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        word-wrap: break-word;
+        background-color: #fff;
+        background-clip: border-box;
+        border: 1px solid #e3e6f0;
+        border-radius: 0.35rem;
+      }
+      
+      
+      .card-body {
+        flex: 1 1 auto;
+        padding: 1.25rem;
+      }
+      
+      
+      .card-header {
+        padding: 0.75rem 1.25rem;
+        margin-bottom: 0;
+        background-color: #f8f9fc;
+        border-bottom: 1px solid #e3e6f0;
+      }
+      
+      .border-left-primary {
+        border-left: 0.25rem solid #13af46 !important;
+      }
+    
+      .fa-1x {
+        font-size: 1.5rem;
+      }
+    
+      .fa-2x {
+        font-size: 3.0rem;
+      }
+      
+      .fa-3x {
+        font-size: 4.5rem;
+      }
+      
+      #brake-button {
+        width: 80%;
+        background-color: rgb(165, 0, 0);
+        color: #fff;
+        border: none;
+        padding: 15px;
+        font-size: 30px;
+        font-weight: 500;
+        border-radius: 10px;
+        margin: 20px auto;
+        display: block;
+      }
+
+      .red {color:red}
+      .blue {color:blue}
+      .orange {color:orange}
+      .font-weight-bold  {font-weight:bold;}
+      .text-primary {
+        color: #13af46 !important;
+      }

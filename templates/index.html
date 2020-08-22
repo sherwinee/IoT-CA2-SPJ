@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <title>Grab Safely</title>
+  <link rel="shortcut icon" href="../static/images/favicon.ico">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  
+  <script src="https://kit.fontawesome.com/a186d658a7.js" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="../static/css/styles.css">
+
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script type="text/javascript">
+      google.charts.load('current', {'packages':['corechart','table']});
+      google.charts.setOnLoadCallback(googlecharts_is_ready);
+
+      const BookingSpeeds = class {
+        constructor(bookingid, speed, datetime_value){
+          this.bookingid = bookingid;
+          this.speedArr = [speed];
+          this.speedSum = parseFloat(speed)
+          this.maxSpeed = parseFloat(speed)
+          this.datetime_valueArr = [datetime_value];
+          this.danger = parseInt(-1)
+        }
+
+        static addSpeed(booking, speed, datetime_value) {
+          // console.log("adding speed...")
+          booking.speedArr.push(speed);
+          booking.speedSum += speed;
+          booking.datetime_valueArr.push(datetime_value);
+          if (speed > booking.maxSpeed) {
+            booking.maxSpeed = speed
+          }
+
+          booking.danger = parseInt(result_dict[booking.bookingid])
+        }
+
+        static getAvg(booking) {
+          return ((parseFloat(booking.speedSum))/(parseFloat(booking.speedArr.length))).toFixed(2)
+        }
+
+        static getMax(booking) {
+          return parseFloat(booking.maxSpeed).toFixed(2)
+        }
+
+        static getDanger(booking) {
+          if (booking.danger == 0) {
+            return 'Safe'
+          } 
+          else if (booking.danger == 1) {
+            return 'Dangerous'
+          }
+          else {
+            return 'No Data'
+          } 
+        }
+      }
+
+      var chart, table;
+      var graphdata;
+      var tabledata;
+      var result_dict;
+
+      var bookingSpeedArr = new Array();
+
+      var selectedIndex = -1; // For selecting which ID to display
+
+      function choose(index) {
+        selectedIndex = index
+        if (!(selectedIndex < 0 || selectedIndex >= bookingSpeedArr.length)) {
+          document.getElementById("current-booking-id").innerHTML = "Booking ID "+ bookingSpeedArr[selectedIndex].bookingid.substring(0, bookingSpeedArr[selectedIndex].bookingid.length - 2);
+          
+        }
+        else {
+          document.getElementById("current-booking-id").innerHTML = "Choose a booking above to view trip details";
+        }
+      }
+
+      function googlecharts_is_ready(){
+      }
+
+      // Simulated Brake 
+      function formAutoSubmitBrake(bkid){
+        var frm =document.getElementById("autosubmit-brake");
+        // takes in bid (booking id) argument to pass to flask
+        var createhiddeninput = document.createElement("input");
+        createhiddeninput.setAttribute("type", "hidden");
+        createhiddeninput.setAttribute("name", "bookingid");
+        createhiddeninput.setAttribute("value", bkid);
+        frm.appendChild(createhiddeninput);
+        frm.submit();
+
+        // This is to avoid sending the same data as previous submissions
+        frm.removeChild(createhiddeninput);
+      }
+
+      function exceed_limit(speed){
+      var frm =document.getElementById("autosubmit");
+
+      // takes in speed argument and sends the speed to flask
+      var speedhiddeninput = document.createElement("input");
+      speedhiddeninput.setAttribute("type", "hidden");
+      speedhiddeninput.setAttribute("name", "speed");
+      speedhiddeninput.setAttribute("value", speed);
+      frm.appendChild(speedhiddeninput);
+      frm.submit();
+
+      // This is to avoid sending the same data as previous submissions
+      frm.removeChild(speedhiddeninput);
+      }
+
+      function getNewData(){
+
+          jQuery.ajax({
+              url: "/api/getdata" ,
+              type: 'POST',            
+              success: function(ndata, textStatus, xhr){ 
+                  chartdata = ndata.chart_data
+                  console.log(chartdata)
+                  chartdatalength  = parseInt(ndata.chart_data.length)
+                  console.log("chartdatalength:" + chartdatalength)                  
+                  graphdata = createDataTableForChart(chartdata,chartdatalength)
+                  tabledata = createDataTableForTable(chartdata,chartdatalength)          
+                  drawLineChart(graphdata,"chart_div")
+                  drawDataTable(tabledata,"table_div")
+                  
+              }//end success
+          });//end ajax
+
+          jQuery.ajax({
+              url: "/predict" ,
+              type: 'POST',            
+              success: function(ndata, textStatus, xhr){ 
+                  result_dict = ndata
+              }//end success
+          });//end ajax
+        } //end getNewData
+
+        function createDataTableForTable(newdata,newdatalength){
+          tabledata = new google.visualization.DataTable();       
+          
+          tabledata.addColumn('string', 'Time');
+          tabledata.addColumn('string', 'Elapsed');
+          tabledata.addColumn('number', 'Speed (km/hour)');
+                             
+          currentrow = 0
+          
+          for (i in newdata){
+          
+                speed = parseFloat(newdata[i].speedkmhour)
+                seconds =  parseInt(newdata[i].seconds)
+                minutes = Math.floor(seconds/60)
+                seconds_str = minutes + " minutes " + (seconds-(minutes*60)) + " seconds"
+                datetime = newdata[i].datetime_value;
+                jsdatetime = new Date(Date.parse(datetime));              
+                
+                jstime = jsdatetime.toLocaleTimeString();
+                // Show only selected id data
+                if (!(selectedIndex < 0 || selectedIndex >= bookingSpeedArr.length)) {
+                  if (newdata[i].bookingid === bookingSpeedArr[selectedIndex].bookingid) {
+                    tabledata.addRows([[jstime,seconds_str,speed]]);
+                    currentrow++
+                  }
+                }
+
+                bookingid = newdata[i].bookingid
+                var exists = false
+
+                for (j in bookingSpeedArr) {
+                  if (bookingid == bookingSpeedArr[j].bookingid) {
+                    // console.log(j)
+                    exists = true
+                    if (!(bookingSpeedArr[j].datetime_valueArr.includes(datetime))) {
+                      BookingSpeeds.addSpeed(bookingSpeedArr[j], speed, datetime)
+                      if (speed > 10){ // Low threshold set for demo purposes
+                      exceed_limit(speed);
+                      console.log("Entered here !!!!")
+										  }
+                    }
+                  }
+                }
+
+                if (!exists) {
+                  console.log("New booking added: " + newdata[i].bookingid)
+                  bookingSpeedArr.push(new BookingSpeeds(newdata[i].bookingid, parseFloat(newdata[i].speedkmhour), datetime))
+
+                  if (speed > 10) {
+                    exceed_limit(speed);
+                    console.log("Entered here !!!!")
+                  }
+                }
+          
+          }
+
+          tabledata.removeRows(0,currentrow-10)
+          
+          return tabledata
+      }
+
+      function createDataTableForChart(newdata,newdatalength){
+          graphdata = new google.visualization.DataTable();       
+          
+          graphdata.addColumn('string', 'Time');
+          graphdata.addColumn('number', 'Speed');
+                             
+          currentrow = 0
+          
+          for (i in newdata){
+          
+                speed = parseFloat(newdata[i].speedkmhour)
+                datetime = newdata[i].datetime_value;
+                jsdatetime = new Date(Date.parse(datetime));              
+                
+                jstime = jsdatetime.toLocaleTimeString();                
+                
+                // Show only selected id data
+                if (!(selectedIndex < 0 || selectedIndex >= bookingSpeedArr.length)) {
+                  if (newdata[i].bookingid === bookingSpeedArr[selectedIndex].bookingid) {
+                    graphdata.addRows([[jstime,speed]]);
+                    currentrow++
+                  }
+                }
+          
+          }
+
+          graphdata.removeRows(0,currentrow-10)
+          
+          return graphdata
+      }
+      
+      function drawDataTable(tabledata, divname){
+          table = new google.visualization.Table(document.getElementById(divname));
+          table.draw(tabledata, {showRowNumber: true, width: '100%', height: '100%'});
+  
+      }//end drawTable
+
+      function drawLineChart(graphdata,divname) {
+          chart = new google.visualization.LineChart(document.getElementById(divname));
+          var options = {
+                            interpolateNulls:true,
+                            pointSize: 5,
+                            curveType: 'function',
+                            legend: 'bottom', 
+                            vAxis: {baseline:0, viewWindow: {min: 0, max:120}},
+                            hAxis: {format: 'hh:mm:ss'}
+                        }
+            chart.draw(graphdata, options);
+          return 
+      } //end drawChart
+
+
+      // Show selection buttons
+      var selects = setInterval(function() {
+        var selectButtons = "";
+        for (i in bookingSpeedArr) {
+          selectButtons = selectButtons.concat("<button onClick=\"choose(" + i + ")\" id=\"button-" + i + "\">ID: " + bookingSpeedArr[i].bookingid.substring(0, bookingSpeedArr[i].bookingid.length - 2) + "</button>");
+          document.getElementById("no-data").innerHTML = ""
+        }
+        if (selectButtons === "") {
+          document.getElementById("no-data").innerHTML = "No data available yet"
+        }
+        // console.log("buttons: " + selectButtons)
+        // if (selectedIndex < 0 || selectedIndex >= bookingSpeedArr.length) {
+        // document.getElementById("button-"+selectedIndex).style.color="#13af46";
+        // }
+          document.getElementById("select-buttons").innerHTML = selectButtons;
+      }, 1000);
+
+      // Change active button colour
+      var changeButtonColor = setInterval(function() {
+        if (!(selectedIndex < 0 || selectedIndex >= bookingSpeedArr.length)) {
+          document.getElementById("button-"+selectedIndex).style.background="#148036";
+          document.getElementById("button-"+selectedIndex).style.color="#ffffff";
+          
+          document.getElementById("current-booking-id").innerHTML = "Booking ID "+ bookingSpeedArr[selectedIndex].bookingid.substring(0, bookingSpeedArr[selectedIndex].bookingid.length - 2);
+          buttonStr = "<button onClick=\"formAutoSubmitBrake(bookingSpeedArr[selectedIndex].bookingid)\", id=\"brake-button\">EMERGENCY SLOW DOWN</button>";
+          document.getElementById("brake-button-place").innerHTML = buttonStr;
+        }
+        else {
+          document.getElementById("current-booking-id").innerHTML = "Choose a booking above to view trip details";
+        }
+      }, 1000);
+
+      // Total Vehicles Tracked
+      var total = setInterval(function() {
+        var totalVehc = bookingSpeedArr.length;
+          document.getElementById("total-vehc").innerHTML = totalVehc;
+      }, 1000);
+
+      // Average & Max Speed
+      var avg = setInterval(function() {
+        if (selectedIndex < 0 || selectedIndex >= bookingSpeedArr.length){
+          var dash = "-";
+            document.getElementById("avg-speed").innerHTML = dash;
+            document.getElementById("max-speed").innerHTML = dash;
+            
+        } else {
+          var avgSpeed = BookingSpeeds.getAvg(bookingSpeedArr[selectedIndex]);
+          var maxSpeed = BookingSpeeds.getMax(bookingSpeedArr[selectedIndex]);
+          
+            document.getElementById("avg-speed").innerHTML = avgSpeed;
+            document.getElementById("max-speed").innerHTML = maxSpeed;
+        }
+      }, 1000);
+
+      var show_danger = setInterval(function() {
+        if (selectedIndex < 0 || selectedIndex >= bookingSpeedArr.length){
+          var dash = "No Data";
+          document.getElementById("danger").innerHTML = dash;
+            
+        } else {
+          var danger_val = BookingSpeeds.getDanger(bookingSpeedArr[selectedIndex]);
+          document.getElementById("danger").innerHTML = danger_val;
+        }
+      }, 1000)
+
+      $(document).ready(function(){          
+
+          setInterval(function () {
+            getNewData()
+          }, 1000);
+      });
+
+</script>
+
+
+
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="top-part">
+      <img src="../static/images/grab-logo.png" id="grab-logo-top">
+      <span class="top-title">Real Time Trip Monitoring System</span>
+    </div>
+    <div class="trip-selection">
+      <div id="no-data"></div>
+      <div id="select-buttons"></div>
+    </div>
+  </nav>
+  
+<div class="container-fluid text-center">
+
+  <div id="current-booking-id"></div>
+  <div id="danger-indicator">Danger Status: <div id="danger"></div></div>
+
+  <div class="row">
+
+
+    <div class="col-sm-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="font-weight-bold text-primary text-uppercase mb-1">No of vehicles tracked</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                <div id="total-vehc"></div> <!-- Dynamically Changed-->
+                Vehicles
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-car fa-3x blue text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-sm-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Average Speed</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800"><div id="avg-speed"></div>km/hour</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-tachometer-alt orange fa-3x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    
+
+    <div class="col-sm-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Maximum Speed</div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800"><div id="max-speed"></div> km/h</div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-tachometer-alt red fa-3x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+    <div class="col-sm-12 text-left">
+         <!-- card START -->
+         <div class="card shadow mb-4">              
+          <!-- card-header START -->
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+          <h6 class="m-0 font-weight-bold text-primary">Speed</h6>                
+        </div>
+        <!-- card-header END -->
+
+        <!-- card-body START -->
+        <div class="card-body"> 
+          <div class="chart-area">
+            <div id="status"></div>
+            <div id="chart_div"></div>
+          </div>
+        </div>
+        <!-- card-body END-->
+      </div>
+      <!-- card END -->
+    </div>
+    </div>
+
+    <div class="col-sm-6 text-left">
+      <!-- card START -->
+      <div class="card shadow mb-4">              
+       <!-- card-header START -->
+     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+       <h6 class="m-0 font-weight-bold text-primary">Speed Table</h6>                
+     </div>
+     <!-- card-header END -->
+
+     <!-- card-body START -->
+     <div class="card-body"> 
+       <div class="chart-area">
+         <div id="table_div"></div>
+       </div>
+     </div>
+     <!-- card-body END-->
+   </div>
+   <!-- card END -->
+ </div>
+
+ <div class="col-sm-6 text-left">
+  <!-- card START -->
+  <div class="card shadow mb-4">              
+   <!-- card-header START -->
+   <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+    <h6 class="m-0 font-weight-bold text-primary">Emergency Functions</h6>                
+  </div>
+ <!-- card-header END -->
+
+ <!-- card-body START -->
+ <div class="card-body"> 
+  <div class="chart-area">
+     <div class = "brake-button">
+       
+       <div id="brake-button-place"></div>
+       
+     </div>
+  </div>
+</div>
+ <!-- card-body END-->
+</div>
+<!-- card END -->
+</div>
+ </div>
+
+ <p>&nbsp;</p>
+ 
+ <!-- row END -->
+<footer class="container-fluid text-center">ST0324 IOT Assignment &copy; Dora Chua</footer>
+
+<!-- Hidden Form for alert purposes -->
+<form id="autosubmit-brake" action="/brake" method="POST">
+  <input type="hidden" name="alert-brake" value="1">
+</form>
+<form id="autosubmit" action="/speedpub" method="POST">
+  <input type="hidden" name="speed-exceed" value="1">
+</form>
+
+</body>
+</html>
